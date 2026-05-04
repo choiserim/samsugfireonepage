@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>자영업자 마이핏 컨설팅 리포트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 안정적인 PDF 생성을 위한 라이브러리 직접 로드 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            background-color: #f1f5f9; 
+            margin: 0; padding: 0;
+            display: flex; justify-content: center;
+        }
+
+        /* [중요] 화면에 보이는 리포트 크기 제어 */
+        #report-area {
+            width: 794px; /* A4 기준 약 210mm */
+            min-height: 1123px; /* A4 기준 약 297mm */
+            background-color: white;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+            margin: 40px auto;
+            position: relative;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 캡처를 위한 특수 스타일: PDF에서는 절대 깨지지 않도록 고정 */
+        .pdf-capture-mode {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            margin: 0 !important;
+            width: 794px !important;
+            transform: none !important;
+        }
+
+        .gradient-header { background: linear-gradient(135deg, #0f172a 0%, #1e40af 100%); }
+        .solution-card { height: 90px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
+        
+        table { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: 12px; }
+        th { background-color: #1e293b; color: white; padding: 15px; font-size: 13px; }
+        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 12px; text-align: center; }
+        
+        @media (max-width: 850px) {
+            #report-area { transform: scale(0.9); transform-origin: top center; margin: 10px auto; }
+        }
+        @media (max-width: 600px) {
+            #report-area { transform: scale(0.5); transform-origin: top center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 버튼 영역 -->
+    <div class="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 w-full max-w-xs px-4">
+        <button id="download-btn" onclick="generatePDF()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 rounded-2xl shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95">
+            <svg id="btn-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            <span id="btn-text">PDF 리포트 저장하기</span>
+        </button>
+    </div>
+
+    <!-- 리포트 본문 (이 영역을 캡처합니다) -->
+    <div id="report-area">
+        <!-- 헤더 -->
+        <div class="gradient-header text-white p-12 text-center relative">
+            <p class="text-blue-300 text-[11px] font-bold tracking-[0.2em] mb-3">BUSINESS RISK MANAGEMENT</p>
+            <h1 class="text-3xl font-black mb-4 leading-tight">사장님을 위한 <span class="text-blue-400">마이핏 세이프</span> 리포트</h1>
+            <p class="text-blue-100/80 text-sm font-medium italic">"사장님, 보험은 단순한 비용이 아니라 가게를 지키는 '사업 유지비'입니다."<br/> 화재보험이 물리적인 가게 건물을 지켜준다면, 마이핏 보험은 사장님의 '법률적 권리'와 '일상의 수익'을 지켜줍니다</p>
+        </div>
+
+        <!-- 메인 컨텐츠 -->
+        <div class="flex-1 px-12 -mt-6">
+            <!-- 리스크 진단 -->
+            <div class="bg-white rounded-3xl p-8 shadow-xl border border-slate-50 mb-8">
+                <h2 class="text-lg font-black text-slate-800 mb-6 text-center">CEO 리스크 진단: 무방비 상태의 자영업</h2>
+                <div class="grid grid-cols-2 gap-5">
+                    <div class="bg-slate-50 p-5 rounded-2xl border-l-4 border-blue-600">
+                        <h3 class="font-bold text-slate-800 text-sm mb-2">01. 소득 단절 리스크</h3>
+                        <p class="text-black text-[11px] font-bold leading-relaxed">
+                            사장님 부재 시 매출은 즉시 0원이 되지만, <br/>고정비는 매달 수백만 원씩 고정 지출됩니다.
+                        </p>
+                    </div>
+                    <div class="bg-slate-50 p-5 rounded-2xl border-l-4 border-red-500">
+                        <h3 class="font-bold text-slate-800 text-sm mb-2">02. 법률 비용 리스크</h3>
+                        <p class="text-black text-[11px] font-bold leading-relaxed">
+                            고객과의 분쟁 및 피해, 복잡한 임대차 계약 갈등 등  민사 소송 발생 시 변호사 선임비 한 번에 일년 치 순익이 소멸될 수 있습니다.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 솔루션 모듈 -->
+            <div class="mb-8">
+                <h2 class="text-sm font-black text-slate-800 mb-4 px-1 flex items-center">
+                    <span class="w-1.5 h-4 bg-blue-600 mr-2 rounded-full"></span>
+                    사장님을 위한 4대 솔루션
+                </h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="solution-card bg-white rounded-2xl p-4 flex items-center">
+                        <div class="text-2xl mr-3">💰</div>
+                        <div>
+                            <p class="font-bold text-[13px] text-slate-800">사장님 유급 휴업</p>
+                            <p class="text-black text-[11px] font-bold leading-relaxed">3대 질병 생활자금형 진단비: 암, 뇌, 심장 질환 발생 시 최소 6개월 이상의 요양이 필요합니다. 고액 진단비로 재활 기간 중의 임대료와 생활비를 해결할 수 있습니다.</p>
+                        </div>
+                    </div>
+                    <div class="solution-card bg-white rounded-2xl p-4 flex items-center">
+                        <div class="text-2xl mr-3">🛡️</div>
+                        <div>
+                            <p class="font-bold text-[13px] text-slate-800">법률비용 지원</p>
+                            <p class="text-black text-[11px] font-bold leading-relaxed">소송은 결과보다 그 과정에서 들어가는 수천만 원의 비용이 더 무섭습니다. 깐깐해진 소비자 환경에서 사장님의 정당한 권리를 지키는 필수 안전장치입니다.</p>
+                        </div>
+                    </div>
+                    <div class="solution-card bg-white rounded-2xl p-4 flex items-center">
+                        <div class="text-2xl mr-3">🔌</div>
+                        <div>
+                            <p class="font-bold text-[13px] text-slate-800">20대 가전 수리</p>
+                            <p class="text-black text-[11px] font-bold leading-relaxed">최근 사용하는 고가의 가전제품 고장은 영업 마비와 직결됩니다. 갑작스러운 고장으로 인한 교체 및 수리비 부담을 줄여줍니다.</p>
+                        </div>
+                    </div>
+                    <div class="solution-card bg-white rounded-2xl p-4 flex items-center">
+                        <div class="text-2xl mr-3">👨‍👩‍👧</div>
+                        <div>
+                            <p class="font-bold text-[13px] text-slate-800">가족 자산 안심</p>
+                            <p class="text-black text-[11px] font-bold leading-relaxed">일상생활 중 타인의 신체에 장해를 입히거나 재물을 파손하여 법률상 배상책임을 졌을 때 보상합니다. 가족이 남의 비싼 물건을 파손하거나, 타인을 다치게 하는 등 예상치 못한 수백, 수천만 원의 배상금을 보험으로 해결하여 사업장 운영 자금을 안전하게 보호합니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 비교 테이블 -->
+            <div class="mb-10">
+                <div class="rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>비상 상황</th>
+                                <th>일반 대응</th>
+                                <th class="bg-blue-600">마이핏 솔루션</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="font-bold text-slate-700">질병/사고 입원</td>
+                                <td class="font-bold text-red-700">적금 인출</td>
+                                <td class="font-black text-blue-700">입원일당 지급</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold text-slate-700">노무 분쟁 발생</td>
+                                <td class="font-bold text-red-700">개인 사비 지출</td>
+                                <td class="font-black text-blue-700">변호사비 지원</td>
+                            </tr>
+                            <tr>
+                                <td class="font-bold text-slate-700">주방기기 고장</td>
+                                <td class="font-bold text-red-700">쌩돈 지출</td>
+                                <td class="font-black text-blue-700">수리비 실비</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 하단 연락처 -->
+            <div class="bg-blue-600 text-white rounded-3xl p-7 text-center">
+                <p class="text-xs font-bold mb-3 opacity-90">행정소송과 법률비용 특약은 깐깐해진 소비자 환경에서 사장님을 지켜줄 가장 강력한 수단입니다. <br/>소중한 사업체를 위해 이 통합 플랜을 꼭 검토해 보시기 바랍니다.</p>
+                <div class="inline-block bg-white/10 px-6 py-2.5 rounded-xl border border-white/20">
+                    <p class="text-sm font-black">삼성센터 | 최세림 GFC <span class="ml-2 font-bold">010-7526-1826</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 푸터 -->
+        <div class="p-10 border-t border-slate-50 mt-auto flex justify-between items-end">
+            <p class="text-[9px] text-slate-400 leading-normal">
+                본 리포트는 가입 이해를 돕기 위한 예시 자료입니다.<br>
+                            </p>
+            <p class="text-[10px] font-black text-slate-300">SAMSUNG FINANCIAL NETWORKS</p>
+        </div>
+    </div>
+
+    <script>
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const btn = document.getElementById('download-btn');
+            const btnText = document.getElementById('btn-text');
+            const reportArea = document.getElementById('report-area');
+
+            btn.disabled = true;
+            btnText.innerText = "리포트 생성 중...";
+
+            try {
+                // [해결 핵심 1] 캡처 전용 스타일 강제 적용
+                // 화면 너비에 상관없이 794px(A4)로 렌더링되도록 함
+                reportArea.classList.add('pdf-capture-mode');
+
+                // [해결 핵심 2] html2canvas 옵션 정밀 조정
+                const canvas = await html2canvas(reportArea, {
+                    scale: 2,             // 2배수 해상도 (너무 높으면 모바일에서 뻗음)
+                    useCORS: true,        // 폰트 깨짐 방지
+                    allowTaint: true,
+                    logging: false,
+                    backgroundColor: "#ffffff",
+                    windowWidth: 794,     // 가상 윈도우 너비 고정
+                    onclone: (clonedDoc) => {
+                        // 클론된 문서에서만 스타일을 한 번 더 확인 (안전장치)
+                        const clonedArea = clonedDoc.getElementById('report-area');
+                        clonedArea.style.transform = 'none';
+                        clonedArea.style.margin = '0';
+                    }
+                });
+
+                // [해결 핵심 3] PDF 페이지 크기 및 이미지 위치 정밀 계산
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                
+                // 이미지가 PDF 페이지에 꽉 차도록 설정
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save('삼성화재_마이핏_컨설팅리포트.pdf');
+
+                btnText.innerText = "저장 완료!";
+                btn.classList.replace('bg-blue-600', 'bg-green-600');
+
+            } catch (error) {
+                console.error('PDF 생성 실패:', error);
+                btnText.innerText = "오류 발생 (다시 시도)";
+            } finally {
+                // 스타일 복구
+                reportArea.classList.remove('pdf-capture-mode');
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btnText.innerText = "PDF 리포트 저장하기";
+                    btn.classList.replace('bg-green-600', 'bg-blue-600');
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>
